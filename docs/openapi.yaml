@@ -1,0 +1,3380 @@
+openapi: 3.0.3
+info:
+  title: Pharmacy Management System API
+  version: 0.1.0
+  description: Single-location pharmacy operations REST API.
+paths:
+  /api/audit/:
+    get:
+      operationId: api_audit_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+          description: ''
+  /api/auth/logout/:
+    post:
+      operationId: api_auth_logout_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/auth/me/:
+    get:
+      operationId: api_auth_me_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentStaff'
+          description: ''
+  /api/auth/password/change/:
+    post:
+      operationId: api_auth_password_change_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/auth/password/reset/:
+    post:
+      operationId: api_auth_password_reset_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/auth/password/reset/confirm/:
+    post:
+      operationId: api_auth_password_reset_confirm_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/auth/signup/:
+    post:
+      operationId: api_auth_signup_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffSignup'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StaffSignup'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StaffSignup'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupResponse'
+          description: ''
+  /api/auth/token/:
+    post:
+      operationId: api_auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/auth/token/refresh/:
+    post:
+      operationId: api_auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/batches/:
+    get:
+      operationId: api_batches_list
+      parameters:
+      - in: query
+        name: drug
+        schema:
+          type: integer
+      - in: query
+        name: expiry_date
+        schema:
+          type: string
+          format: date
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - available
+          - inactive
+          - quarantined
+        description: |-
+          * `available` - Available
+          * `quarantined` - Quarantined
+          * `inactive` - Inactive
+      - in: query
+        name: supplier
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Batch'
+          description: ''
+    post:
+      operationId: api_batches_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Batch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Batch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Batch'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Batch'
+          description: ''
+  /api/batches/{id}/:
+    get:
+      operationId: api_batches_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this batch.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Batch'
+          description: ''
+    put:
+      operationId: api_batches_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this batch.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Batch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Batch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Batch'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Batch'
+          description: ''
+    patch:
+      operationId: api_batches_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this batch.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBatch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBatch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBatch'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Batch'
+          description: ''
+    delete:
+      operationId: api_batches_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this batch.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/batches/{id}/adjustments/:
+    post:
+      operationId: api_batches_adjustments_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockAdjustment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StockAdjustment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StockAdjustment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+          description: ''
+  /api/categories/:
+    get:
+      operationId: api_categories_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: ''
+    post:
+      operationId: api_categories_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/categories/{id}/:
+    get:
+      operationId: api_categories_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    put:
+      operationId: api_categories_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: api_categories_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: api_categories_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/customers/:
+    get:
+      operationId: api_customers_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customer'
+          description: ''
+    post:
+      operationId: api_customers_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Customer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Customer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Customer'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/customers/{id}/:
+    get:
+      operationId: api_customers_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this customer.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    put:
+      operationId: api_customers_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this customer.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Customer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Customer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Customer'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    patch:
+      operationId: api_customers_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this customer.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomer'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    delete:
+      operationId: api_customers_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this customer.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/dashboard/summary/:
+    get:
+      operationId: api_dashboard_summary_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  business_date:
+                    type: string
+                    format: date
+                  completed_sales:
+                    type: integer
+                  sales_total:
+                    type: string
+                  payment_total:
+                    type: string
+                  active_drug_count:
+                    type: integer
+                  sellable_units:
+                    type: integer
+                  low_stock_drugs:
+                    type: array
+                    items:
+                      type: object
+                  expired_batch_count:
+                    type: integer
+                  expiring_batch_count:
+                    type: integer
+                  pending_purchase_orders:
+                    type: integer
+                  top_selling_drugs:
+                    type: array
+                    items:
+                      type: object
+                  recent_activity:
+                    type: array
+                    items:
+                      type: object
+          description: ''
+  /api/doctors/:
+    get:
+      operationId: api_doctors_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Doctor'
+          description: ''
+    post:
+      operationId: api_doctors_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Doctor'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Doctor'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Doctor'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+          description: ''
+  /api/doctors/{id}/:
+    get:
+      operationId: api_doctors_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this doctor.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+          description: ''
+    put:
+      operationId: api_doctors_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this doctor.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Doctor'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Doctor'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Doctor'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+          description: ''
+    patch:
+      operationId: api_doctors_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this doctor.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDoctor'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDoctor'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDoctor'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+          description: ''
+    delete:
+      operationId: api_doctors_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this doctor.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/drugs/:
+    get:
+      operationId: api_drugs_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: prescription_required
+        schema:
+          type: boolean
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - inactive
+        description: |-
+          * `active` - Active
+          * `inactive` - Inactive
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Drug'
+          description: ''
+    post:
+      operationId: api_drugs_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Drug'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Drug'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Drug'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Drug'
+          description: ''
+  /api/drugs/{id}/:
+    get:
+      operationId: api_drugs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this drug.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Drug'
+          description: ''
+    put:
+      operationId: api_drugs_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this drug.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Drug'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Drug'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Drug'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Drug'
+          description: ''
+    patch:
+      operationId: api_drugs_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this drug.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDrug'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDrug'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDrug'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Drug'
+          description: ''
+    delete:
+      operationId: api_drugs_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this drug.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/health/:
+    get:
+      operationId: api_health_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+  /api/prescriptions/:
+    get:
+      operationId: api_prescriptions_list
+      parameters:
+      - in: query
+        name: customer
+        schema:
+          type: integer
+      - in: query
+        name: doctor
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - approved
+          - cancelled
+          - completed
+          - pending_review
+        description: |-
+          * `pending_review` - Pending review
+          * `approved` - Approved
+          * `cancelled` - Cancelled
+          * `completed` - Completed
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prescription'
+          description: ''
+    post:
+      operationId: api_prescriptions_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrescriptionCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrescriptionCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrescriptionCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrescriptionCreate'
+          description: ''
+  /api/prescriptions/{id}/:
+    get:
+      operationId: api_prescriptions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this prescription.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+          description: ''
+    put:
+      operationId: api_prescriptions_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this prescription.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Prescription'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Prescription'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Prescription'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+          description: ''
+    patch:
+      operationId: api_prescriptions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this prescription.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPrescription'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPrescription'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPrescription'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+          description: ''
+    delete:
+      operationId: api_prescriptions_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this prescription.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/prescriptions/{id}/review/:
+    post:
+      operationId: api_prescriptions_review_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this prescription.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrescriptionReview'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrescriptionReview'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrescriptionReview'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrescriptionReview'
+          description: ''
+  /api/prescriptions/eligible/:
+    get:
+      operationId: api_prescriptions_eligible_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+          description: ''
+  /api/purchase-orders/:
+    post:
+      operationId: api_purchase_orders_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderResponse'
+          description: ''
+  /api/purchase-orders/{id}/receipts/:
+    post:
+      operationId: api_purchase_orders_receipts_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoodsReceiptInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GoodsReceiptInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GoodsReceiptInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoodsReceiptResponse'
+          description: ''
+  /api/purchase-orders/{id}/transition/:
+    post:
+      operationId: api_purchase_orders_transition_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderTransition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderTransition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderTransition'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderTransitionResponse'
+          description: ''
+  /api/reports/{report_name}/:
+    get:
+      operationId: api_reports_retrieve
+      parameters:
+      - in: path
+        name: report_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+          description: ''
+  /api/roles/:
+    get:
+      operationId: api_roles_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+          description: ''
+    post:
+      operationId: api_roles_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Role'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Role'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+          description: ''
+  /api/roles/{id}/:
+    get:
+      operationId: api_roles_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this role.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+          description: ''
+    put:
+      operationId: api_roles_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this role.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Role'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Role'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+          description: ''
+    patch:
+      operationId: api_roles_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this role.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRole'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRole'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRole'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+          description: ''
+    delete:
+      operationId: api_roles_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this role.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/sales/:
+    get:
+      operationId: api_sales_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sale'
+          description: ''
+  /api/sales/checkout/:
+    post:
+      operationId: api_sales_checkout_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Checkout'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Checkout'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Checkout'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+          description: ''
+  /api/sales/customer-lookup/:
+    get:
+      operationId: api_sales_customer_lookup_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CheckoutCustomer'
+          description: ''
+  /api/schema/:
+    get:
+      operationId: api_schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/settings/:
+    get:
+      operationId: api_settings_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PharmacySettingsResponse'
+          description: ''
+    patch:
+      operationId: api_settings_partial_update
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPharmacySettingsInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPharmacySettingsInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPharmacySettingsInput'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PharmacySettingsResponse'
+          description: ''
+  /api/staff/:
+    get:
+      operationId: api_staff_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: role
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Staff'
+          description: ''
+    post:
+      operationId: api_staff_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Staff'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Staff'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Staff'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+          description: ''
+  /api/staff/{id}/:
+    get:
+      operationId: api_staff_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+          description: ''
+    put:
+      operationId: api_staff_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Staff'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Staff'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Staff'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+          description: ''
+    patch:
+      operationId: api_staff_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStaff'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStaff'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStaff'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+          description: ''
+    delete:
+      operationId: api_staff_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/suppliers/:
+    get:
+      operationId: api_suppliers_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Supplier'
+          description: ''
+    post:
+      operationId: api_suppliers_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Supplier'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Supplier'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Supplier'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplier'
+          description: ''
+  /api/suppliers/{id}/:
+    get:
+      operationId: api_suppliers_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this supplier.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplier'
+          description: ''
+    put:
+      operationId: api_suppliers_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this supplier.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Supplier'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Supplier'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Supplier'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplier'
+          description: ''
+    patch:
+      operationId: api_suppliers_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this supplier.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplier'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplier'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplier'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplier'
+          description: ''
+    delete:
+      operationId: api_suppliers_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this supplier.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    Batch:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        drug_name:
+          type: string
+          readOnly: true
+        supplier_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        batch_number:
+          type: string
+          maxLength: 100
+        expiry_date:
+          type: string
+          format: date
+        received_quantity:
+          type: integer
+          readOnly: true
+        available_quantity:
+          type: integer
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/BatchStatusEnum'
+        drug:
+          type: integer
+        supplier:
+          type: integer
+      required:
+      - available_quantity
+      - batch_number
+      - created_at
+      - drug
+      - drug_name
+      - expiry_date
+      - id
+      - received_quantity
+      - supplier
+      - supplier_name
+      - updated_at
+    BatchStatusEnum:
+      enum:
+      - available
+      - quarantined
+      - inactive
+      type: string
+      description: |-
+        * `available` - Available
+        * `quarantined` - Quarantined
+        * `inactive` - Inactive
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 255
+        is_active:
+          type: boolean
+      required:
+      - created_at
+      - id
+      - name
+      - updated_at
+    Checkout:
+      type: object
+      properties:
+        customer_id:
+          type: integer
+          minimum: 1
+          nullable: true
+        prescription_id:
+          type: integer
+          minimum: 1
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckoutItem'
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        payment_reference:
+          type: string
+          maxLength: 120
+        cash_tendered:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+      required:
+      - items
+      - payment_method
+    CheckoutCustomer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+      required:
+      - full_name
+      - id
+    CheckoutItem:
+      type: object
+      properties:
+        drug_id:
+          type: integer
+          minimum: 1
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+      - drug_id
+      - quantity
+    CurrencyEnum:
+      enum:
+      - UGX
+      - USD
+      - KES
+      - TZS
+      type: string
+      description: |-
+        * `UGX` - UGX
+        * `USD` - USD
+        * `KES` - KES
+        * `TZS` - TZS
+    CurrentStaff:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        display_name:
+          type: string
+        role:
+          type: string
+          nullable: true
+        permissions:
+          type: array
+          items:
+            type: string
+      required:
+      - display_name
+      - id
+      - permissions
+      - role
+      - username
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 180
+        phone:
+          type: string
+          maxLength: 40
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - full_name
+      - id
+    DetailResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 180
+        registration_number:
+          type: string
+          maxLength: 100
+        contact_phone:
+          type: string
+          maxLength: 40
+        is_active:
+          type: boolean
+      required:
+      - full_name
+      - id
+    Drug:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        generic_name:
+          type: string
+          maxLength: 180
+        brand_name:
+          type: string
+          maxLength: 180
+        strength:
+          type: string
+          maxLength: 100
+        dosage_form:
+          type: string
+          maxLength: 80
+        description:
+          type: string
+        unit_of_measure:
+          type: string
+          maxLength: 40
+        selling_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        reorder_level:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        prescription_required:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/DrugStatusEnum'
+        category:
+          type: integer
+      required:
+      - category
+      - created_at
+      - dosage_form
+      - generic_name
+      - id
+      - selling_price
+      - strength
+      - unit_of_measure
+      - updated_at
+    DrugStatusEnum:
+      enum:
+      - active
+      - inactive
+      type: string
+      description: |-
+        * `active` - Active
+        * `inactive` - Inactive
+    GoodsReceiptInput:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReceiptItem'
+      required:
+      - items
+    GoodsReceiptResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        receipt_number:
+          type: string
+      required:
+      - id
+      - receipt_number
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+        service:
+          type: string
+      required:
+      - service
+      - status
+    LogoutInput:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - refresh
+    PasswordChangeInput:
+      type: object
+      properties:
+        old_password:
+          type: string
+          writeOnly: true
+        new_password:
+          type: string
+          writeOnly: true
+      required:
+      - new_password
+      - old_password
+    PasswordResetConfirmInput:
+      type: object
+      properties:
+        token:
+          type: string
+          writeOnly: true
+        new_password:
+          type: string
+          writeOnly: true
+      required:
+      - new_password
+      - token
+    PasswordResetRequestInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    PatchedBatch:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        drug_name:
+          type: string
+          readOnly: true
+        supplier_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        batch_number:
+          type: string
+          maxLength: 100
+        expiry_date:
+          type: string
+          format: date
+        received_quantity:
+          type: integer
+          readOnly: true
+        available_quantity:
+          type: integer
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/BatchStatusEnum'
+        drug:
+          type: integer
+        supplier:
+          type: integer
+    PatchedCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 255
+        is_active:
+          type: boolean
+    PatchedCustomer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 180
+        phone:
+          type: string
+          maxLength: 40
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedDoctor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 180
+        registration_number:
+          type: string
+          maxLength: 100
+        contact_phone:
+          type: string
+          maxLength: 40
+        is_active:
+          type: boolean
+    PatchedDrug:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        generic_name:
+          type: string
+          maxLength: 180
+        brand_name:
+          type: string
+          maxLength: 180
+        strength:
+          type: string
+          maxLength: 100
+        dosage_form:
+          type: string
+          maxLength: 80
+        description:
+          type: string
+        unit_of_measure:
+          type: string
+          maxLength: 40
+        selling_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        reorder_level:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        prescription_required:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/DrugStatusEnum'
+        category:
+          type: integer
+    PatchedPharmacySettingsInput:
+      type: object
+      properties:
+        pharmacy_name:
+          type: string
+          maxLength: 160
+        logo_path:
+          type: string
+          maxLength: 255
+        address:
+          type: string
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 40
+        email:
+          type: string
+          format: email
+        receipt_footer:
+          type: string
+          maxLength: 500
+        currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        timezone:
+          type: string
+          maxLength: 80
+        expiry_warning_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+    PatchedPrescription:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        reference:
+          type: string
+          readOnly: true
+        customer:
+          type: integer
+          readOnly: true
+        doctor:
+          type: integer
+          readOnly: true
+        recorded_by:
+          type: integer
+          readOnly: true
+        prescribed_at:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PrescriptionStatusEnum'
+          readOnly: true
+        reviewed_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        reviewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        notes:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrescriptionItem'
+          readOnly: true
+    PatchedRole:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 255
+        permissions: {}
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedStaff:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        display_name:
+          type: string
+          maxLength: 160
+        role:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+        password:
+          type: string
+          writeOnly: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedSupplier:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          maxLength: 180
+        contact_name:
+          type: string
+          maxLength: 160
+        phone:
+          type: string
+          maxLength: 40
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        address:
+          type: string
+        is_active:
+          type: boolean
+    PaymentMethodEnum:
+      enum:
+      - cash
+      - mobile_money
+      - card
+      - bank_transfer
+      type: string
+      description: |-
+        * `cash` - cash
+        * `mobile_money` - mobile_money
+        * `card` - card
+        * `bank_transfer` - bank_transfer
+    PharmacySettingsResponse:
+      type: object
+      properties:
+        key:
+          type: string
+        value: {}
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - key
+      - updated_at
+      - value
+    Prescription:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        reference:
+          type: string
+          readOnly: true
+        customer:
+          type: integer
+          readOnly: true
+        doctor:
+          type: integer
+          readOnly: true
+        recorded_by:
+          type: integer
+          readOnly: true
+        prescribed_at:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PrescriptionStatusEnum'
+          readOnly: true
+        reviewed_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        reviewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        notes:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrescriptionItem'
+          readOnly: true
+      required:
+      - customer
+      - doctor
+      - id
+      - items
+      - notes
+      - prescribed_at
+      - recorded_by
+      - reference
+      - reviewed_at
+      - reviewed_by
+      - status
+    PrescriptionCreate:
+      type: object
+      properties:
+        reference:
+          type: string
+          maxLength: 50
+        customer_id:
+          type: integer
+          minimum: 1
+        doctor_id:
+          type: integer
+          minimum: 1
+        prescribed_at:
+          type: string
+          format: date
+        notes:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrescriptionItemInput'
+      required:
+      - customer_id
+      - doctor_id
+      - items
+      - prescribed_at
+      - reference
+    PrescriptionItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        drug:
+          type: integer
+        drug_name:
+          type: string
+          readOnly: true
+        authorized_quantity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 1
+          format: int64
+        dosage:
+          type: string
+          maxLength: 180
+        frequency:
+          type: string
+          maxLength: 120
+        duration:
+          type: string
+          maxLength: 120
+        instructions:
+          type: string
+      required:
+      - authorized_quantity
+      - dosage
+      - drug
+      - drug_name
+      - duration
+      - frequency
+      - id
+    PrescriptionItemInput:
+      type: object
+      properties:
+        drug_id:
+          type: integer
+          minimum: 1
+        authorized_quantity:
+          type: integer
+          minimum: 1
+        dosage:
+          type: string
+          maxLength: 180
+        frequency:
+          type: string
+          maxLength: 120
+        duration:
+          type: string
+          maxLength: 120
+        instructions:
+          type: string
+      required:
+      - authorized_quantity
+      - dosage
+      - drug_id
+      - duration
+      - frequency
+    PrescriptionReview:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/PrescriptionReviewActionEnum'
+      required:
+      - action
+    PrescriptionReviewActionEnum:
+      enum:
+      - approve
+      - cancel
+      type: string
+      description: |-
+        * `approve` - approve
+        * `cancel` - cancel
+    PrescriptionStatusEnum:
+      enum:
+      - pending_review
+      - approved
+      - cancelled
+      - completed
+      type: string
+      description: |-
+        * `pending_review` - Pending review
+        * `approved` - Approved
+        * `cancelled` - Cancelled
+        * `completed` - Completed
+    PurchaseOrderCreate:
+      type: object
+      properties:
+        order_number:
+          type: string
+          maxLength: 40
+        supplier_id:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseOrderItemInput'
+      required:
+      - items
+      - order_number
+      - supplier_id
+    PurchaseOrderItemInput:
+      type: object
+      properties:
+        drug_id:
+          type: integer
+          minimum: 1
+        ordered_quantity:
+          type: integer
+          minimum: 1
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - drug_id
+      - ordered_quantity
+      - unit_cost
+    PurchaseOrderResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        order_number:
+          type: string
+        status:
+          type: string
+      required:
+      - id
+      - order_number
+      - status
+    PurchaseOrderTransition:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/PurchaseOrderTransitionActionEnum'
+      required:
+      - action
+    PurchaseOrderTransitionActionEnum:
+      enum:
+      - submit
+      - cancel
+      type: string
+      description: |-
+        * `submit` - submit
+        * `cancel` - cancel
+    PurchaseOrderTransitionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+      required:
+      - id
+      - status
+    ReceiptItem:
+      type: object
+      properties:
+        purchase_order_item_id:
+          type: integer
+          minimum: 1
+        quantity:
+          type: integer
+          minimum: 1
+        batch_number:
+          type: string
+          maxLength: 100
+        expiry_date:
+          type: string
+          format: date
+      required:
+      - batch_number
+      - expiry_date
+      - purchase_order_item_id
+      - quantity
+    ReportResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - count
+      - next
+      - previous
+      - results
+    Role:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 255
+        permissions: {}
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - updated_at
+    Sale:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sale_number:
+          type: string
+          maxLength: 40
+        customer:
+          type: integer
+          nullable: true
+        prescription:
+          type: integer
+          nullable: true
+        processed_by:
+          type: integer
+        status:
+          $ref: '#/components/schemas/SaleStatusEnum'
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        total_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        payment_method:
+          type: string
+          readOnly: true
+        payment_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - id
+      - payment_amount
+      - payment_method
+      - processed_by
+      - sale_number
+    SaleStatusEnum:
+      enum:
+      - draft
+      - completed
+      - cancelled
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `completed` - Completed
+        * `cancelled` - Cancelled
+    SignupResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    Staff:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        display_name:
+          type: string
+          maxLength: 160
+        role:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+        password:
+          type: string
+          writeOnly: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_joined
+      - id
+      - username
+    StaffSignup:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+        display_name:
+          type: string
+          maxLength: 160
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - display_name
+      - email
+      - password
+      - username
+    StockAdjustment:
+      type: object
+      properties:
+        quantity_delta:
+          type: integer
+        reason:
+          type: string
+          maxLength: 255
+          minLength: 8
+      required:
+      - quantity_delta
+      - reason
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          maxLength: 180
+        contact_name:
+          type: string
+          maxLength: 160
+        phone:
+          type: string
+          maxLength: 40
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        address:
+          type: string
+        is_active:
+          type: boolean
+      required:
+      - created_at
+      - id
+      - name
+      - updated_at
+    TokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - refresh
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
