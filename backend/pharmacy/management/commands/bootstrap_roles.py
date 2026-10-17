@@ -1,4 +1,6 @@
 from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import CommandError
 from django.db import transaction
 
 from pharmacy.models import Role
@@ -19,6 +21,8 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        if settings.PHARMACY_LEGACY_SCHEMA:
+            raise CommandError("Legacy role rows are read-only; role permissions use the built-in role mapping.")
         for name, permissions in DEFAULT_ROLES.items():
             role, created = Role.objects.update_or_create(
                 name=name,

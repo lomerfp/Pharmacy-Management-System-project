@@ -1,6 +1,6 @@
 # REST API (Current Surface)
 
-Base path `/api/`; JSON request/response. OpenAPI is served at `/api/schema/` and Swagger UI at `/api/docs/`. Protected endpoints use bearer JWT unless stated. JWT token creation and refresh are `/api/auth/token/` and `/api/auth/token/refresh/`. Tokens currently use Django's default username field; do not expose clinical fields in cashier interfaces.
+Base path `/api/`; JSON request/response. OpenAPI is served at `/api/schema/` and Swagger UI at `/api/docs/`. Protected endpoints use bearer JWT unless stated. JWT token creation and refresh are `/api/auth/token/` and `/api/auth/token/refresh/`. Staff sign in with the email and password stored in the app-owned credential record; do not expose clinical fields in cashier interfaces.
 
 | Method and path | Permission key | Purpose |
 |---|---|---|
@@ -13,6 +13,8 @@ Base path `/api/`; JSON request/response. OpenAPI is served at `/api/schema/` an
 | `POST /api/auth/password/change/` | Authenticated | Change password and revoke outstanding refresh tokens |
 | `POST /api/auth/password/reset/` | Anonymous, generic response | Request an expiring single-use email token |
 | `POST /api/auth/password/reset/confirm/` | Anonymous, valid token | Set a new password and consume token atomically |
+
+Token requests use `{"email": "staff@example.com", "password": "..."}`. Credential emails are unique and normalized; staff must also be active to sign in. In legacy schema mode, credentials are stored in the app-owned `staff_credentials` table, while the existing `staff` and `role` tables remain read-only.
 | `GET,POST /api/categories/` | `inventory.read` / `inventory.manage` | Category listing/maintenance |
 | `GET,POST /api/drugs/` | `inventory.read` / `inventory.manage` | Drug listing/maintenance |
 | `GET,POST /api/suppliers/` | `purchasing.read` / `purchasing.manage` | Supplier listing/maintenance |

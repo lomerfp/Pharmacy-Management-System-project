@@ -60,6 +60,159 @@
 			],
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Pharmacy: Test legacy Staff auth",
+			"type": "shell",
+			"command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+			"args": [
+				"${workspaceFolder}\\backend\\manage.py",
+				"test",
+				"pharmacy.tests.test_legacy_staff_auth",
+				"--settings=config.legacy_test_settings",
+				"-v",
+				"2"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "Pharmacy: Apply local migrations",
+			"type": "shell",
+			"command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+			"args": [
+				"${workspaceFolder}\\backend\\manage.py",
+				"migrate",
+				"--noinput"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Pharmacy: Inspect Git status",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"${workspaceFolder}",
+				"status",
+				"--short",
+				"--branch"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Pharmacy: Review navigation diff",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"${workspaceFolder}",
+				"diff",
+				"--",
+				"frontend/src/App.tsx"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Pharmacy: Review navigation diff (no pager)",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"--no-pager",
+				"-C",
+				"${workspaceFolder}",
+				"diff",
+				"--",
+				"frontend/src/App.tsx"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Pharmacy: Stage navigation changes",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"${workspaceFolder}",
+				"add",
+				"--",
+				"frontend/src/App.tsx",
+				"frontend/src/page-navigation.css"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Pharmacy: Verify staged navigation changes",
+			"type": "shell",
+			"command": "cmd.exe",
+			"args": [
+				"/d",
+				"/c",
+				"git -C \"${workspaceFolder}\" status --short --branch && git --no-pager -C \"${workspaceFolder}\" diff --cached --stat"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Pharmacy: Commit navigation changes",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"${workspaceFolder}",
+				"commit",
+				"-m",
+				"Add workspace page navigation"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Pharmacy: Push navigation commit",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"${workspaceFolder}",
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Pharmacy: Verify navigation push",
+			"type": "shell",
+			"command": "cmd.exe",
+			"args": [
+				"/d",
+				"/c",
+				"git -C \"${workspaceFolder}\" status --short --branch && git -C \"${workspaceFolder}\" log -1 --oneline"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Pharmacy: Check Git before push",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"${workspaceFolder}",
+				"status",
+				"--short",
+				"--branch"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }

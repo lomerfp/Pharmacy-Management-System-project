@@ -63,10 +63,10 @@ function clearTokens() {
   refreshToken = null
 }
 
-export async function login(username: string, password: string): Promise<StaffSummary> {
+export async function login(email: string, password: string): Promise<StaffSummary> {
   const tokens = await request<TokenPair>('/auth/token/', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ email, password }),
   }, false)
   accessToken = tokens.access
   refreshToken = tokens.refresh

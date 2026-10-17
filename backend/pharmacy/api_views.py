@@ -19,9 +19,10 @@ from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from drf_spectacular.utils import extend_schema
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
-from .models import AuditLog, Batch, Category, Customer, Doctor, Drug, PasswordResetToken, PharmacySetting, Prescription, PurchaseOrder, PurchaseOrderItem, Role, Sale, SaleItem, Staff, Supplier
+from .models import AuditLog, Batch, Category, Customer, Doctor, Drug, PasswordResetToken, PharmacySetting, Prescription, PurchaseOrder, PurchaseOrderItem, Role, Sale, SaleItem, Staff, StaffCredential, Supplier, set_staff_password
 from .permissions import HasRolePermission
 from .serializers import (
     BatchSerializer, CategorySerializer, CheckoutSerializer, DrugSerializer,
@@ -29,7 +30,7 @@ from .serializers import (
     CurrentStaffSerializer, DetailResponseSerializer, LogoutInputSerializer,
     PasswordChangeInputSerializer, PasswordResetConfirmInputSerializer,
     PasswordResetRequestInputSerializer, SignupResponseSerializer,
-    StaffSignupSerializer,
+    EmailTokenObtainPairSerializer, StaffSignupSerializer,
     PrescriptionCreateSerializer, PrescriptionEligibleSerializer, PrescriptionReviewSerializer, PrescriptionSerializer,
     PurchaseOrderCreateSerializer, PurchaseOrderResponseSerializer,
     PurchaseOrderTransitionResponseSerializer, PurchaseOrderTransitionSerializer,
@@ -39,6 +40,10 @@ from .serializers import (
 )
 from .reports import csv_file_response, movement_rows, payment_rows, purchase_rows, sales_by_drug_rows, sales_rows, stock_rows
 from .services import adjust_batch_stock, complete_sale, receive_purchase_order
+
+
+class EmailTokenObtainPairView(TokenObtainPairView):
+    serializer_class = EmailTokenObtainPairSerializer
 
 
 class RoleRestrictedModelViewSet(viewsets.ModelViewSet):
@@ -370,6 +375,8 @@ class RoleViewSet(PermissionRestrictedViewSet):
     queryset = Role.objects.all().order_by("name")
     serializer_class = RoleSerializer
     permission_by_action = {action: "staff.manage" for action in ("list", "retrieve", "create", "update", "partial_update", "destroy")}
+    if settings.PHARMACY_LEGACY_SCHEMA:
+        http_method_names = ["get", "head", "options"]
 
     def perform_destroy(self, instance):
         raise ValidationError("Roles cannot be deleted; deactivate them to preserve history.")
@@ -379,8 +386,10 @@ class StaffViewSet(PermissionRestrictedViewSet):
     queryset = Staff.objects.select_related("role").all().order_by("display_name")
     serializer_class = StaffSerializer
     permission_by_action = {action: "staff.manage" for action in ("list", "retrieve", "create", "update", "partial_update", "destroy")}
-    search_fields = ("username", "display_name", "email")
+    search_fields = ("display_name", "email") if settings.PHARMACY_LEGACY_SCHEMA else ("username", "display_name", "email")
     filterset_fields = ("role", "is_active")
+    if settings.PHARMACY_LEGACY_SCHEMA:
+        http_method_names = ["get", "head", "options"]
 
     def perform_destroy(self, instance):
         if instance.pk == self.request.user.pk:
@@ -500,6 +509,8 @@ class StaffSignupView(APIView):
 
     @extend_schema(request=StaffSignupSerializer, responses={201: SignupResponseSerializer})
     def post(self, request):
+        if settings.PHARMACY_LEGACY_SCHEMA:
+            return Response({"detail": "Staff accounts are provisioned from the existing legacy staff table."}, status=409)
         serializer = StaffSignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         staff = serializer.save()
@@ -523,11 +534,11 @@ class PasswordChangeView(APIView):
         if not request.user.check_password(old_password):
             raise ValidationError({"old_password": "Current password is incorrect."})
         validate_password(new_password, request.user)
-        request.user.set_password(new_password)
-        request.user.save(update_fields=["password"])
+        set_staff_password(request.user, new_password)
         for token in OutstandingToken.objects.filter(user=request.user):
             BlacklistedToken.objects.get_or_create(token=token)
-        AuditLog.objects.create(actor=request.user, action="staff.password_changed", entity_type="Staff", entity_id=str(request.user.pk), metadata={})
+        if not settings.PHARMACY_LEGACY_SCHEMA:
+            AuditLog.objects.create(actor=request.user, action="staff.password_changed", entity_type="Staff", entity_id=str(request.user.pk), metadata={})
         return Response({"detail": "Password changed. Sign in again with the new password."})
 
 
@@ -552,14 +563,17 @@ class PasswordResetRequestView(APIView):
     @extend_schema(request=PasswordResetRequestInputSerializer, responses=DetailResponseSerializer)
     def post(self, request):
         email = request.data.get("email", "").strip().lower()
-        staff = Staff.objects.filter(email__iexact=email, is_active=True).first() if email else None
-        if staff:
+        credential = StaffCredential.objects.select_related("staff").filter(
+            email__iexact=email, staff__email__iexact=email, staff__is_active=True,
+        ).first() if email else None
+        if credential:
+            staff = credential.staff
             raw_token = secrets.token_urlsafe(32)
             PasswordResetToken.objects.create(
                 staff=staff, token_digest=hashlib.sha256(raw_token.encode()).hexdigest(),
                 expires_at=timezone.now() + timedelta(minutes=30),
             )
-            send_mail("Pharmacy password reset", f"Single-use reset code: {raw_token}", settings.DEFAULT_FROM_EMAIL, [staff.email], fail_silently=True)
+            send_mail("Pharmacy password reset", f"Single-use reset code: {raw_token}", settings.DEFAULT_FROM_EMAIL, [credential.email], fail_silently=True)
         return Response({"detail": "If an active account matches that address, reset instructions have been sent."})
 
 
@@ -578,9 +592,9 @@ class PasswordResetConfirmView(APIView):
         if not reset:
             raise ValidationError({"token": "Reset token is invalid or expired."})
         validate_password(password, reset.staff)
-        reset.staff.set_password(password)
-        reset.staff.save(update_fields=["password"])
+        set_staff_password(reset.staff, password)
         reset.consumed_at = timezone.now()
         reset.save(update_fields=["consumed_at"])
-        AuditLog.objects.create(actor=reset.staff, action="staff.password_reset", entity_type="Staff", entity_id=str(reset.staff_id), metadata={})
+        if not settings.PHARMACY_LEGACY_SCHEMA:
+            AuditLog.objects.create(actor=reset.staff, action="staff.password_reset", entity_type="Staff", entity_id=str(reset.staff_id), metadata={})
         return Response({"detail": "Password reset successfully. Please sign in."})

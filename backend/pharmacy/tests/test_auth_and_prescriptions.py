@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from pharmacy.models import (
     AuditLog, Batch, Category, Customer, Doctor, Drug, Payment, Prescription,
-    PrescriptionItem, Role, Sale, Staff, Supplier,
+    PrescriptionItem, Role, Sale, Staff, StaffCredential, Supplier,
 )
 from pharmacy.services import complete_sale
 
@@ -93,10 +93,27 @@ class AuthAndPrescriptionTests(TestCase):
         self.assertFalse(pending.is_active)
         self.assertIsNone(pending.role_id)
         self.assertTrue(pending.check_password("new-staff-password-12345"))
+        self.assertEqual(pending.credential.email, "new-staff@example.test")
         login_response = APIClient().post("/api/auth/token/", {
-            "username": pending.username, "password": "new-staff-password-12345",
+            "email": pending.email, "password": "new-staff-password-12345",
         }, format="json")
         self.assertEqual(login_response.status_code, 401)
+
+    def test_staff_sign_in_uses_email_and_credential_hash(self):
+        credential = StaffCredential.objects.get(staff=self.pharmacist)
+        self.assertNotEqual(credential.password_hash, "start-password-12345")
+
+        response = APIClient().post("/api/auth/token/", {
+            "email": "  PHARMACIST@example.test ", "password": "start-password-12345",
+        }, format="json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        rejected = APIClient().post("/api/auth/token/", {
+            "email": self.pharmacist.username, "password": "start-password-12345",
+        }, format="json")
+        self.assertEqual(rejected.status_code, 401)
 
     def test_staff_admin_can_activate_assign_role_and_deactivate_accounts(self):
         admin_role = Role.objects.create(name="Staff Admin", permissions=["staff.manage"])
@@ -168,6 +185,22 @@ class AuthAndPrescriptionTests(TestCase):
         self.assertEqual(repeated.status_code, 400)
         self.pharmacist.refresh_from_db()
         self.assertTrue(self.pharmacist.check_password("replacement-password-6789"))
+
+    def test_password_change_updates_the_credential_hash(self):
+        client = APIClient()
+        client.force_authenticate(user=self.pharmacist)
+
+        response = client.post("/api/auth/password/change/", {
+            "old_password": "start-password-12345",
+            "new_password": "changed-password-67890",
+        }, format="json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(self.pharmacist.check_password("changed-password-67890"))
+        login = APIClient().post("/api/auth/token/", {
+            "email": self.pharmacist.email, "password": "changed-password-67890",
+        }, format="json")
+        self.assertEqual(login.status_code, 200)
 
     def test_logout_blacklists_refresh_token(self):
         refresh = RefreshToken.for_user(self.pharmacist)

@@ -115,7 +115,7 @@ export default function App() {
           ) : (
             <section className="module-empty"><div className="empty-glyph"><Pill size={23} /></div><span className="eyebrow">MODULE FOUNDATION</span><h2>{page}</h2><p>This module is part of the implementation sequence. No sample business records are shown; this page will connect to persisted API data as its workflow is built.</p><button className="secondary-action" onClick={() => setPage('Overview')}>Back to overview</button></section>
           )}
-          <footer className="page-footer"><span><ShieldCheck size={14} /> Signed in as {staff.role || 'staff'}</span><span><Activity size={14} /> UGX <i>·</i> Africa/Kampala</span><span>Academic project <i>·</i> 2026/27</span><span>© Lomer Francis Peter · Systems Developer · 2026</span></footer>
+          <footer className="page-footer"><span><ShieldCheck size={14} /> Signed in as {staff.role || 'staff'}</span><span><Activity size={14} /> UGX <i>·</i> Africa/Kampala</span><span>Academic project <i>·</i> 2026/27</span><span>© Group 8 Members · 2026</span></footer>
         </div>
       </main>
     </div>

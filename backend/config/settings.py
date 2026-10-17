@@ -63,16 +63,24 @@ if database_engine in {"mysql", "django.db.backends.mysql"}:
         }
     }
 elif database_engine == "django.db.backends.sqlite3":
+    db_name = os.getenv("DB_NAME", str(BASE_DIR / "local_dev.sqlite3"))
+    if db_name != ":memory:":
+        db_path = Path(db_name)
+        if not db_path.is_absolute():
+            db_name = str(BASE_DIR / db_path)
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": os.getenv("DB_NAME", str(BASE_DIR / "local_dev.sqlite3")),
+            "NAME": db_name,
         }
     }
 else:
     raise RuntimeError(f"Unsupported DB_ENGINE: {database_engine}")
 
 AUTH_USER_MODEL = "pharmacy.Staff"
+AUTHENTICATION_BACKENDS = ["pharmacy.auth_backend.StaffCredentialBackend"]
+PHARMACY_LEGACY_SCHEMA = os.getenv("PHARMACY_LEGACY_SCHEMA", "false").lower() == "true"
+MIGRATION_MODULES = {"pharmacy": "pharmacy.migrations_legacy"} if PHARMACY_LEGACY_SCHEMA else {}
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 12}},

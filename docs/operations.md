@@ -44,6 +44,8 @@ python backend\manage.py migrate
 python backend\manage.py runserver 127.0.0.1:8000
 ```
 
+For an existing legacy pharmacy database with `staff(StaffID, RoleID, FullName, Email, IsActive)` and `role(RoleID, RoleName)`, set `PHARMACY_LEGACY_SCHEMA=true` in `.env` instead of using the fresh-install schema. In this mode Django maps Staff and Role as read-only tables and uses `staff_credentials` plus password-reset tokens as app-owned tables. Back up the database first, then run `python backend\manage.py migrate`; the legacy migration path does not create, alter, or copy passwords into `staff` or `role`. Existing accounts have no password in those tables, so enroll one through `python backend\manage.py set_staff_credential staff@example.com`; the command prompts for the password without echoing it. Staff signup, staff edits, role edits, and demo seeding are disabled in legacy mode. The rest of the inventory and sales API still needs table-by-table legacy mapping before it can be used against this schema.
+
 In another PowerShell window:
 
 ```powershell

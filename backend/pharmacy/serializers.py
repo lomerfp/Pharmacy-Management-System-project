@@ -1,9 +1,16 @@
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from rest_framework import serializers
 
-from .models import Batch, Category, Customer, Doctor, Drug, Prescription, PrescriptionItem, PurchaseOrder, PurchaseOrderItem, Role, Sale, Staff, Supplier
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from .models import Batch, Category, Customer, Doctor, Drug, Prescription, PrescriptionItem, PurchaseOrder, PurchaseOrderItem, Role, Sale, Staff, StaffCredential, Supplier, set_staff_password
 from .models import PharmacySetting
+
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    username_field = "email"
 
 
 class HealthSerializer(serializers.Serializer):
@@ -79,30 +86,56 @@ class LogoutInputSerializer(serializers.Serializer):
 
 
 class RoleSerializer(serializers.ModelSerializer):
+    if settings.PHARMACY_LEGACY_SCHEMA:
+        description = serializers.CharField(read_only=True)
+        permissions = serializers.ListField(child=serializers.CharField(), read_only=True)
+        is_active = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = Role
-        fields = ("id", "name", "description", "permissions", "is_active", "created_at", "updated_at")
-        read_only_fields = ("created_at", "updated_at")
+        fields = (
+            ("id", "name", "description", "permissions", "is_active")
+            if settings.PHARMACY_LEGACY_SCHEMA
+            else ("id", "name", "description", "permissions", "is_active", "created_at", "updated_at")
+        )
+        read_only_fields = fields if settings.PHARMACY_LEGACY_SCHEMA else ("created_at", "updated_at")
 
 
 class StaffSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, validators=[validate_password])
+    if settings.PHARMACY_LEGACY_SCHEMA:
+        username = serializers.EmailField(source="email", read_only=True)
 
     class Meta:
         model = Staff
-        fields = ("id", "username", "email", "display_name", "role", "is_active", "password", "date_joined")
-        read_only_fields = ("id", "date_joined")
+        fields = (
+            ("id", "username", "email", "display_name", "role", "is_active")
+            if settings.PHARMACY_LEGACY_SCHEMA
+            else ("id", "username", "email", "display_name", "role", "is_active", "password", "date_joined")
+        )
+        read_only_fields = fields if settings.PHARMACY_LEGACY_SCHEMA else ("id", "date_joined")
 
     def create(self, validated_data):
+        if settings.PHARMACY_LEGACY_SCHEMA:
+            raise serializers.ValidationError("Legacy staff records cannot be created by the application.")
         password = validated_data.pop("password", None)
         if not password:
             raise serializers.ValidationError({"password": "A temporary password is required."})
         return Staff.objects.create_user(password=password, **validated_data)
 
+    def validate_email(self, value):
+        if StaffCredential.objects.filter(email__iexact=value).exclude(staff=self.instance).exists():
+            raise serializers.ValidationError("An account with this email already exists.")
+        if self.instance and hasattr(self.instance, "credential") and not value.strip():
+            raise serializers.ValidationError("An email is required for sign-in.")
+        return value
+
     def update(self, instance, validated_data):
+        if settings.PHARMACY_LEGACY_SCHEMA:
+            raise serializers.ValidationError("Legacy staff records are read-only.")
         password = validated_data.pop("password", None)
         if password:
-            instance.set_password(password)
+            set_staff_password(instance, password)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
@@ -121,7 +154,7 @@ class StaffSignupSerializer(serializers.Serializer):
         return value
 
     def validate_email(self, value):
-        if Staff.objects.filter(email__iexact=value).exists():
+        if StaffCredential.objects.filter(email__iexact=value).exists() or Staff.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("An account with this email already exists.")
         return value
 

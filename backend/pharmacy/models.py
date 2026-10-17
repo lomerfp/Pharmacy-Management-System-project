@@ -1,6 +1,8 @@
-from django.contrib.auth.models import AbstractUser
+from django.conf import settings
+from django.contrib.auth.hashers import check_password as check_encoded_password, make_password
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.core.validators import MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 
 
@@ -12,25 +14,92 @@ class TimestampedModel(models.Model):
         abstract = True
 
 
-class Role(TimestampedModel):
-    name = models.CharField(max_length=80, unique=True)
-    description = models.CharField(max_length=255, blank=True)
-    permissions = models.JSONField(default=list)
-    is_active = models.BooleanField(default=True)
+if settings.PHARMACY_LEGACY_SCHEMA:
+    from .legacy_auth_models import Role, Staff
+else:
+    class Role(TimestampedModel):
+        name = models.CharField(max_length=80, unique=True)
+        description = models.CharField(max_length=255, blank=True)
+        permissions = models.JSONField(default=list)
+        is_active = models.BooleanField(default=True)
 
-    def __str__(self):
-        return self.name
+        def __str__(self):
+            return self.name
 
 
-class Staff(AbstractUser, TimestampedModel):
-    REQUIRED_FIELDS = ["display_name"]
+    class StaffManager(UserManager):
+        use_in_migrations = False
 
-    role = models.ForeignKey(Role, on_delete=models.PROTECT, related_name="staff_members", null=True, blank=True)
-    display_name = models.CharField(max_length=160, blank=True)
-    is_active = models.BooleanField(default=True)
+        def _create_user(self, username, email, password, **extra_fields):
+            email = self.normalize_email(email)
+            staff = self.model(username=username, email=email, **extra_fields)
+            staff.set_unusable_password()
+            staff.save(using=self._db)
+            if password:
+                staff.set_password(password)
+                staff.save(using=self._db, update_fields=["password"])
+            return staff
 
-    def __str__(self):
-        return self.display_name or self.username
+
+    class Staff(AbstractUser, TimestampedModel):
+        REQUIRED_FIELDS = ["display_name"]
+        objects = StaffManager()
+
+        role = models.ForeignKey(Role, on_delete=models.PROTECT, related_name="staff_members", null=True, blank=True)
+        display_name = models.CharField(max_length=160, blank=True)
+        is_active = models.BooleanField(default=True)
+
+        def set_password(self, raw_password):
+            self.password = make_password(None)
+            self._pending_credential_password = raw_password
+
+        def check_password(self, raw_password):
+            credential = StaffCredential.objects.filter(staff_id=self.pk).first()
+            return bool(credential and check_encoded_password(raw_password, credential.password_hash))
+
+        @transaction.atomic
+        def save(self, *args, **kwargs):
+            pending_password = getattr(self, "_pending_credential_password", ...)
+            result = super().save(*args, **kwargs)
+            credential = StaffCredential.objects.filter(staff_id=self.pk).first()
+            if pending_password is not ...:
+                del self._pending_credential_password
+                if pending_password and self.email.strip():
+                    StaffCredential.objects.update_or_create(
+                        staff=self,
+                        defaults={
+                            "email": self.email.strip().casefold(),
+                            "password_hash": make_password(pending_password),
+                        },
+                    )
+            elif credential:
+                email = self.email.strip().casefold()
+                if email and credential.email != email:
+                    credential.email = email
+                    credential.save(update_fields=["email", "updated_at"])
+            return result
+
+        def __str__(self):
+            return self.display_name or self.username
+
+
+class StaffCredential(models.Model):
+    staff = models.OneToOneField(
+        Staff, on_delete=models.CASCADE, related_name="credential", db_column="StaffID"
+    )
+    email = models.EmailField(max_length=254, unique=True)
+    password_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "staff_credentials"
+
+
+def set_staff_password(staff, raw_password):
+    staff.set_password(raw_password)
+    if not settings.PHARMACY_LEGACY_SCHEMA:
+        staff.save(update_fields=["password"])
 
 
 class Category(TimestampedModel):

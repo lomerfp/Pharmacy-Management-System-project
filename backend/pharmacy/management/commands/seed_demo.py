@@ -23,6 +23,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if not settings.DEBUG:
             raise CommandError("Refusing to seed demo data unless DJANGO_DEBUG=true.")
+        if settings.PHARMACY_LEGACY_SCHEMA:
+            raise CommandError("Demo seeding is disabled in legacy schema mode to preserve existing database rows.")
         password = os.getenv("DEMO_STAFF_PASSWORD", "")
         if len(password) < 12:
             raise CommandError("Set DEMO_STAFF_PASSWORD to a development-only password of at least 12 characters.")
@@ -33,26 +35,25 @@ class Command(BaseCommand):
             roles[name] = role
         staff_rows = {}
         staff_specs = [
-            ("demo_admin", "Demo Administrator", "Administrator"),
-            ("demo_pharmacist", "Demo Pharmacist", "Pharmacist/Manager"),
-            ("demo_technician", "Demo Technician", "Pharmacy Technician"),
-            ("demo_cashier", "Demo Cashier", "Cashier"),
-            ("demo_inventory", "Demo Inventory Officer", "Inventory Officer"),
-            ("demo_owner", "Demo Owner Manager", "Owner/Manager"),
+            ("demo_admin", "Demo Administrator", "Administrator", "demo_admin@pharmacy.local"),
+            ("demo_pharmacist", "Demo Pharmacist", "Pharmacist/Manager", "demo_pharmacist@pharmacy.local"),
+            ("demo_technician", "Demo Technician", "Pharmacy Technician", "demo_technician@pharmacy.local"),
+            ("demo_cashier", "Demo Cashier", "Cashier", "demo_cashier@pharmacy.local"),
+            ("demo_inventory", "Demo Inventory Officer", "Inventory Officer", "demo_inventory@pharmacy.local"),
+            ("demo_owner", "Demo Owner Manager", "Owner/Manager", "demo_owner@pharmacy.local"),
         ]
-        for username, display_name, role_name in staff_specs:
+        for username, display_name, role_name, email in staff_specs:
             staff, created = Staff.objects.get_or_create(
                 username=username,
-                defaults={"display_name": display_name, "role": roles[role_name], "is_active": True},
+                defaults={"email": email, "display_name": display_name, "role": roles[role_name], "is_active": True},
             )
-            if created:
-                staff.set_password(password)
-                staff.save(update_fields=["password"])
-            else:
-                staff.display_name = display_name
-                staff.role = roles[role_name]
-                staff.is_active = True
-                staff.save(update_fields=["display_name", "role", "is_active", "updated_at"])
+            staff.email = email
+            staff.display_name = display_name
+            staff.role = roles[role_name]
+            staff.is_active = True
+            staff.save(update_fields=["email", "display_name", "role", "is_active", "updated_at"])
+            staff.set_password(password)
+            staff.save(update_fields=["password"])
             staff_rows[username] = staff
 
         supplier, _ = Supplier.objects.get_or_create(name="Fictional Demo Medical Supplies", defaults={"contact_name": "Demo Contact", "phone": "+256 700 000 001", "email": "supplier@example.test", "address": "Fictional address, Kampala"})
@@ -124,5 +125,5 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(self.style.SUCCESS("Fictional pharmacy demo data is ready."))
-        self.stdout.write("Staff usernames: " + ", ".join(username for username, _, _ in staff_specs))
+        self.stdout.write("Staff sign-in emails: " + ", ".join(email for _, _, _, email in staff_specs))
         self.stdout.write("All demo staff accounts share DEMO_STAFF_PASSWORD; use only in local development.")

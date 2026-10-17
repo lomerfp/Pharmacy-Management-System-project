@@ -6,7 +6,8 @@ import './login.css'
 type Props = { onLogin: (staff: StaffSummary) => void }
 
 export default function Login({ onLogin }: Props) {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [signupUsername, setSignupUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -23,9 +24,9 @@ export default function Login({ onLogin }: Props) {
     setError('')
     setBusy(true)
     try {
-      onLogin(await login(username.trim(), password))
+      onLogin(await login(email.trim(), password))
     } catch (cause) {
-      setError(cause instanceof ApiError && cause.status === 401 ? 'That username or password is not correct.' : cause instanceof Error ? cause.message : 'Sign-in failed. Check that the API is available.')
+      setError(cause instanceof ApiError && cause.status === 401 ? 'That email or password is not correct.' : cause instanceof Error ? cause.message : 'Sign-in failed. Check that the API is available.')
     } finally {
       setBusy(false)
     }
@@ -63,7 +64,7 @@ export default function Login({ onLogin }: Props) {
     setError('')
     setBusy(true)
     try {
-      const result = await submitSignup({ username: username.trim(), email: signupEmail.trim(), display_name: signupName.trim(), password })
+      const result = await submitSignup({ username: signupUsername.trim(), email: signupEmail.trim(), display_name: signupName.trim(), password })
       setNotice(result.detail)
       setResetMode('login')
       setPassword('')
@@ -78,7 +79,7 @@ export default function Login({ onLogin }: Props) {
         <div className="login-brand"><span className="brand-mark"><Pill size={19} /></span><span><strong>Goodwell</strong><small>PHARMACY MANAGEMENT SYSTEM</small></span></div>
         <div className="login-title"><span className="eyebrow">SINGLE LOCATION · KAMPALA</span><h1>Good to have<br />you back.</h1><p>Sign in with your account, or request staff access for administrator approval.</p></div>
         <div className="login-context"><span className="login-context-mark"><LockKeyhole size={18} /></span><span><strong>Protected staff workspace</strong><small>Access is controlled by your assigned role.</small></span></div>
-        <footer>UGX <i>·</i> Africa/Kampala <span>Academic project · 2026/27</span><span>© Lomer Francis Peter · Systems Developer · 2026</span></footer>
+        <footer>UGX <i>·</i> Africa/Kampala <span>Academic project · 2026/27</span><span>© Group 8 Members · 2026</span></footer>
       </div>
       <section className="login-panel" aria-labelledby="login-heading">
         <div className="login-form-wrap">
@@ -88,8 +89,8 @@ export default function Login({ onLogin }: Props) {
           <p className="login-subtitle">{resetMode === 'login' ? 'Use your pharmacy account credentials.' : resetMode === 'request' ? 'We will send reset instructions to your staff email.' : resetMode === 'confirm' ? 'Enter the single-use code from your reset email.' : 'An administrator must assign your role and activate access.'}</p>
           {notice && <p className="login-notice" role="status">{notice}</p>}
           {resetMode === 'login' && <form onSubmit={submit}>
-            <label htmlFor="username">Username</label>
-            <input autoComplete="username" id="username" name="username" value={username} onChange={(event) => setUsername(event.target.value)} required autoFocus />
+            <label htmlFor="email">Staff email</label>
+            <input autoComplete="email" id="email" name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoFocus />
             <div className="password-label"><label htmlFor="password">Password</label><button type="button" onClick={() => { setResetMode('request'); setResetEmail(''); setError(''); setNotice('') }}>Forgot password?</button></div>
             <input autoComplete="current-password" id="password" name="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
             {error && <p className="login-error" role="alert">{error}</p>}
@@ -107,7 +108,7 @@ export default function Login({ onLogin }: Props) {
             <button className="login-submit" type="submit" disabled={busy}>{busy ? 'Updating…' : 'Set new password'}{!busy && <ArrowRight size={17} />}</button>
           </form>}
           {resetMode === 'signup' && <form onSubmit={signUp}>
-            <label htmlFor="username">Username</label><input autoComplete="username" id="username" value={username} onChange={(event) => setUsername(event.target.value)} required />
+            <label htmlFor="signup-username">Username</label><input autoComplete="username" id="signup-username" value={signupUsername} onChange={(event) => setSignupUsername(event.target.value)} required />
             <label htmlFor="signup-name">Full name</label><input id="signup-name" value={signupName} onChange={(event) => setSignupName(event.target.value)} required />
             <label htmlFor="signup-email">Staff email</label><input id="signup-email" type="email" autoComplete="email" value={signupEmail} onChange={(event) => setSignupEmail(event.target.value)} required />
             <label htmlFor="signup-password">Password</label><input id="signup-password" type="password" autoComplete="new-password" minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} required />
