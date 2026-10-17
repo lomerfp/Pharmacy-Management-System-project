@@ -12,12 +12,20 @@ from pharmacy.models import Batch, Payment, Prescription, Role, Sale
 
 
 class DemoSeedTests(TestCase):
-    @patch("os.path.exists", return_value=False)
-    def test_local_default_database_uses_sqlite_when_not_running_in_docker(self, _mock_exists):
+    def test_mysql_configuration_uses_env_credentials(self):
         sys.modules.pop("config.settings", None)
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(os.environ, {
+            "DB_ENGINE": "django.db.backends.mysql",
+            "DB_NAME": "pharmacy_management_db",
+            "DB_USER": "pharmacy_app",
+            "DB_PASSWORD": "local-secret",
+            "DB_HOST": "127.0.0.1",
+            "DB_PORT": "3306",
+        }, clear=True):
             settings_module = importlib.import_module("config.settings")
-            self.assertEqual(settings_module.DATABASES["default"]["ENGINE"], "django.db.backends.sqlite3")
+            self.assertEqual(settings_module.DATABASES["default"]["ENGINE"], "django.db.backends.mysql")
+            self.assertEqual(settings_module.DATABASES["default"]["NAME"], "pharmacy_management_db")
+            self.assertEqual(settings_module.DATABASES["default"]["PORT"], "3306")
         sys.modules.pop("config.settings", None)
 
     @override_settings(DEBUG=False)

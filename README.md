@@ -9,8 +9,8 @@ This workspace is being implemented in SDLC phases. See [SDLC progress](SDLC_PRO
 ## Architecture
 
 - `frontend/`: React, TypeScript, Vite, Tailwind CSS.
-- `backend/`: Django, Django REST Framework, PostgreSQL.
-- `docker-compose.yml`: local PostgreSQL service and application services.
+- `backend/`: Django, Django REST Framework, MySQL.
+- `docker-compose.yml`: optional local MySQL service for containerized development.
 - API validation, business rules, and database access belong in the backend. Browser storage is not the business database.
 
 The 15 approved core entities are Role, Staff, Category, Drug, Batch, Supplier, PurchaseOrder, PurchaseOrderItem, Customer, Doctor, Prescription, PrescriptionItem, Sale, SaleItem, and Payment. Any[...]
@@ -19,59 +19,52 @@ The 15 approved core entities are Role, Staff, Category, Drug, Batch, Supplier, 
 
 - Node.js 22 LTS or newer and npm.
 - Python 3.12 or newer (the current workspace has Python 3.13.7).
-- PostgreSQL 16+ or Docker Desktop with Compose v2.
+- MySQL 8.x or Docker Desktop with Compose v2.
 - Git.
 - VS Code extensions recommended: Python (Microsoft), Pylance (Microsoft), Docker (Microsoft), and ESLint (Microsoft). They are recommendations, not runtime dependencies.
 
-## Quickstart (Docker Compose)
+## Local MySQL setup
 
-These steps will bring up a local development stack with a PostgreSQL database and both application containers.
-
-1. Copy the example environment file and edit secrets if needed:
+This project is configured to use the existing MySQL schema in the local `.env` file. Copy the sample file and fill in the credentials for your local instance:
 
 ```bash
 cp .env.example .env
-# edit .env and replace any development-only passwords/secret values before sharing or deploying
+# edit .env and set DB_NAME=pharmacy_management_db, DB_USER, DB_PASSWORD, DB_HOST=127.0.0.1, DB_PORT=3306
 ```
 
-2. Build and run the stack with Docker Compose:
+Do not commit `.env` to Git. Keep the connection settings local to your machine.
+
+## Quickstart (Docker Compose)
+
+These steps will bring up a local MySQL service and the web app containers when desired.
 
 ```bash
 docker compose up --build
 ```
 
-3. The frontend will be available at `http://localhost:5173` and the API at `http://localhost:8000/api/`.
+The frontend will be available at `http://localhost:5173` and the API at `http://localhost:8000/api/`.
 
 Notes:
-- The `.env.example` is pre-configured to make the frontend container talk to the backend service by the service name (`VITE_API_BASE_URL=http://backend:8000/api`). When running the frontend locally outside Docker, update `VITE_API_BASE_URL` to `http://localhost:8000/api` or use the default in the example.
-- If you need to run migrations or seed demo data manually:
-
-```bash
-# in a separate terminal (or inside the backend container)
-cd backend
-python manage.py migrate
-python manage.py loaddata initial_data.json  # if present
-python manage.py createsuperuser  # optional admin user
-```
+- The app expects the existing MySQL database at `127.0.0.1:3306` for direct local development.
+- If you run the stack in Docker, the `db` service should resolve to the same database name and credentials in `.env`.
+- Do not run destructive migrations against the existing production or academic database until you have reviewed the exact schema impact.
 
 ## Running locally without Docker
 
 If you prefer to run the services directly on your machine:
-
-1. Backend
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
 cp .env.example .env
-# edit .env to point to your local Postgres if not using docker
+# edit .env to point to your MySQL server and database name
 cd backend
 python manage.py migrate
 python manage.py runserver 127.0.0.1:8000
 ```
 
-2. Frontend
+Frontend:
 
 ```bash
 cd frontend
@@ -82,12 +75,12 @@ npm run dev
 
 ## Running tests
 
-The project uses an automatic test DB selection so tests run against SQLite by default and do not require a running Postgres instance.
+The project expects a dedicated MySQL test database when used for database-compatibility validation. If you need a disposable SQLite-only override, set `USE_SQLITE_TESTS=true` explicitly; otherwise the default path is the configured MySQL connection.
 
 From the repository root:
 
 ```bash
-# Python tests
+# Python tests against the configured MySQL database
 python backend/manage.py test
 
 # Frontend build (validates TypeScript/compile-time issues)
@@ -95,23 +88,11 @@ npm ci --prefix frontend
 npm --prefix frontend run build
 ```
 
-CI notes:
-- The workflow is configured to run the backend tests (Django) and build the frontend. If you add or modify CI workflows, ensure the node build step sets VITE_API_BASE_URL appropriately when building the frontend.
-
 ## Troubleshooting
 
-- If containers cannot start due to database authentication errors, confirm `.env` values for `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` match and that the `db` container is healthy.
-- If the frontend fails to reach the API in Docker, open a shell in the frontend container and curl the backend service:
-
-```bash
-docker compose exec frontend sh -c 'curl -sS http://backend:8000/api/ | head -n 20'
-```
-
-- To run a simple smoke check against a running API locally, use the provided script `scripts/healthcheck.sh` (see below) or run:
-
-```bash
-curl -I http://localhost:8000/api/schema/
-```
+- If the app cannot connect to MySQL, confirm `.env` has the exact values for `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, and `DB_PORT`.
+- If you are using Docker, make sure the `db` container is healthy and the app is using the same database name and credentials.
+- The project currently has no shipped SQL schema files or legacy MySQL table definitions in the repository, so the exact field-to-model mapping must be compared against the live schema before destructive changes are made.
 
 ## Documentation map
 

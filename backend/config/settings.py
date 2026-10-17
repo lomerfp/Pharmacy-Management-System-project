@@ -2,6 +2,7 @@ import os
 import sys
 from datetime import timedelta
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,44 +40,37 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 # Database configuration
-# - Keep tests and local non-Docker development on SQLite for reliability.
-# - Use PostgreSQL only when this app is running in Docker or an explicit Postgres engine is chosen.
+# The application should connect to the configured MySQL database via .env values.
+# SQLite/PostgreSQL defaults are intentionally not used for normal startup.
 TESTING = os.getenv("DJANGO_TESTING", "").lower() == "true" or "test" in sys.argv
-if TESTING:
+database_engine = os.getenv("DB_ENGINE", "django.db.backends.mysql").strip() or "django.db.backends.mysql"
+if database_engine in {"mysql", "django.db.backends.mysql"}:
+    database_engine = "django.db.backends.mysql"
+    db_name = os.getenv("DB_NAME", "pharmacy_management_db")
+    db_user = os.getenv("DB_USER", "")
+    db_password = os.getenv("DB_PASSWORD", "")
+    db_host = os.getenv("DB_HOST", "127.0.0.1")
+    db_port = os.getenv("DB_PORT", "3306")
+    DATABASES = {
+        "default": {
+            "ENGINE": database_engine,
+            "NAME": db_name,
+            "USER": db_user,
+            "PASSWORD": db_password,
+            "HOST": db_host,
+            "PORT": db_port,
+            "OPTIONS": {"charset": "utf8mb4"},
+        }
+    }
+elif database_engine == "django.db.backends.sqlite3":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "test_db.sqlite3",
+            "NAME": os.getenv("DB_NAME", str(BASE_DIR / "local_dev.sqlite3")),
         }
     }
 else:
-    explicit_engine = os.getenv("DB_ENGINE", "").strip()
-    sqlite_default = (not os.path.exists("/.dockerenv")) and not explicit_engine
-    if explicit_engine:
-        database_engine = explicit_engine
-    elif sqlite_default:
-        database_engine = "django.db.backends.sqlite3"
-    else:
-        database_engine = "django.db.backends.postgresql"
-
-    if database_engine == "django.db.backends.sqlite3":
-        DATABASES = {
-            "default": {
-                "ENGINE": "django.db.backends.sqlite3",
-                "NAME": os.getenv("DB_NAME", str(BASE_DIR / "db.sqlite3")),
-            }
-        }
-    else:
-        DATABASES = {
-            "default": {
-                "ENGINE": database_engine,
-                "NAME": os.getenv("POSTGRES_DB", "pharmacy_dev"),
-                "USER": os.getenv("POSTGRES_USER", "pharmacy_app"),
-                "PASSWORD": os.getenv("POSTGRES_PASSWORD", "change-me-local-only"),
-                "HOST": os.getenv("POSTGRES_HOST", "127.0.0.1"),
-                "PORT": os.getenv("POSTGRES_PORT", "5432"),
-            }
-        }
+    raise RuntimeError(f"Unsupported DB_ENGINE: {database_engine}")
 
 AUTH_USER_MODEL = "pharmacy.Staff"
 AUTH_PASSWORD_VALIDATORS = [
