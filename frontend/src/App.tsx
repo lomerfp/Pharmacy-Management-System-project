@@ -7,6 +7,7 @@ import { getCurrentStaff, logout, type StaffSummary } from './api'
 import Login from './Login'
 import { DashboardPage, InventoryPage, PointOfSalePage, ReportsPage } from './OperationsPages'
 import StaffManagementPage from './StaffManagementPage'
+import './page-navigation.css'
 
 type Page = 'Overview' | 'Inventory' | 'Purchasing' | 'Prescriptions' | 'Point of sale' | 'Reports' | 'Staff & access' | 'Settings'
 
@@ -95,6 +96,20 @@ export default function App() {
             <div><span className="eyebrow">PHARMACY CONTROL ROOM</span><h1>{page}</h1><p>Goodwell Community Pharmacy <span className="heading-divider">/</span> Kampala</p></div>
             {staff.permissions.includes('sales.checkout') && <button className="primary-action" onClick={() => setPage('Point of sale')}><ShoppingCart size={17} /> New sale</button>}
           </div>
+          <nav className="page-section-nav" aria-label="Workspace pages">
+            {visibleNavigation.map(({ label, icon: Icon }) => (
+              <button
+                key={label}
+                type="button"
+                className={page === label ? 'page-section-active' : ''}
+                aria-current={page === label ? 'page' : undefined}
+                onClick={() => { setPage(label); setMenuOpen(false) }}
+              >
+                <Icon size={15} strokeWidth={1.9} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
           {page === 'Inventory' ? <InventoryPage /> : page === 'Point of sale' ? <PointOfSalePage /> : page === 'Reports' ? <ReportsPage /> : page === 'Staff & access' ? <StaffManagementPage /> : page === 'Overview' ? (
             <DashboardPage onNavigate={(target) => setPage(target)} />
           ) : (
