@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
@@ -37,14 +38,29 @@ TEMPLATES = [{
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-DATABASES = {"default": {
-    "ENGINE": "django.db.backends.postgresql",
-    "NAME": os.getenv("POSTGRES_DB", "pharmacy_dev"),
-    "USER": os.getenv("POSTGRES_USER", "pharmacy_app"),
-    "PASSWORD": os.getenv("POSTGRES_PASSWORD", "change-me-local-only"),
-    "HOST": os.getenv("POSTGRES_HOST", "127.0.0.1"),
-    "PORT": os.getenv("POSTGRES_PORT", "5432"),
-}}
+# Database configuration
+# - Use SQLite automatically when running tests to keep test runs fast and isolated.
+# - Use Postgres by default (as configured by the docker-compose stack and .env).
+TESTING = os.getenv("DJANGO_TESTING", "").lower() == "true" or "test" in sys.argv
+if TESTING:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "test_db.sqlite3",
+        }
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
+            "NAME": os.getenv("POSTGRES_DB", "pharmacy_dev"),
+            "USER": os.getenv("POSTGRES_USER", "pharmacy_app"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "change-me-local-only"),
+            "HOST": os.getenv("POSTGRES_HOST", "127.0.0.1"),
+            "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        }
+    }
+
 AUTH_USER_MODEL = "pharmacy.Staff"
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
