@@ -1,4 +1,6 @@
+import importlib
 import os
+import sys
 from io import StringIO
 from unittest.mock import patch
 
@@ -10,6 +12,14 @@ from pharmacy.models import Batch, Payment, Prescription, Role, Sale
 
 
 class DemoSeedTests(TestCase):
+    @patch("os.path.exists", return_value=False)
+    def test_local_default_database_uses_sqlite_when_not_running_in_docker(self, _mock_exists):
+        sys.modules.pop("config.settings", None)
+        with patch.dict(os.environ, {}, clear=True):
+            settings_module = importlib.import_module("config.settings")
+            self.assertEqual(settings_module.DATABASES["default"]["ENGINE"], "django.db.backends.sqlite3")
+        sys.modules.pop("config.settings", None)
+
     @override_settings(DEBUG=False)
     def test_demo_seed_refuses_non_debug_environment(self):
         with patch.dict(os.environ, {"DEMO_STAFF_PASSWORD": "demo-password-12345"}):

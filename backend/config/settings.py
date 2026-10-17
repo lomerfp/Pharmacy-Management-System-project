@@ -39,8 +39,8 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 # Database configuration
-# - Use SQLite automatically when running tests to keep test runs fast and isolated.
-# - Use Postgres by default (as configured by the docker-compose stack and .env).
+# - Keep tests and local non-Docker development on SQLite for reliability.
+# - Use PostgreSQL only when this app is running in Docker or an explicit Postgres engine is chosen.
 TESTING = os.getenv("DJANGO_TESTING", "").lower() == "true" or "test" in sys.argv
 if TESTING:
     DATABASES = {
@@ -50,16 +50,33 @@ if TESTING:
         }
     }
 else:
-    DATABASES = {
-        "default": {
-            "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
-            "NAME": os.getenv("POSTGRES_DB", "pharmacy_dev"),
-            "USER": os.getenv("POSTGRES_USER", "pharmacy_app"),
-            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "change-me-local-only"),
-            "HOST": os.getenv("POSTGRES_HOST", "127.0.0.1"),
-            "PORT": os.getenv("POSTGRES_PORT", "5432"),
+    explicit_engine = os.getenv("DB_ENGINE", "").strip()
+    sqlite_default = (not os.path.exists("/.dockerenv")) and not explicit_engine
+    if explicit_engine:
+        database_engine = explicit_engine
+    elif sqlite_default:
+        database_engine = "django.db.backends.sqlite3"
+    else:
+        database_engine = "django.db.backends.postgresql"
+
+    if database_engine == "django.db.backends.sqlite3":
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": os.getenv("DB_NAME", str(BASE_DIR / "db.sqlite3")),
+            }
         }
-    }
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": database_engine,
+                "NAME": os.getenv("POSTGRES_DB", "pharmacy_dev"),
+                "USER": os.getenv("POSTGRES_USER", "pharmacy_app"),
+                "PASSWORD": os.getenv("POSTGRES_PASSWORD", "change-me-local-only"),
+                "HOST": os.getenv("POSTGRES_HOST", "127.0.0.1"),
+                "PORT": os.getenv("POSTGRES_PORT", "5432"),
+            }
+        }
 
 AUTH_USER_MODEL = "pharmacy.Staff"
 AUTH_PASSWORD_VALIDATORS = [
